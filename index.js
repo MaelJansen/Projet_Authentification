@@ -79,20 +79,42 @@ app.get("/blog", isAuthenticated, (req, res) => {
 });
 
 app.post("/blog", isAuthenticated, (req, res) => {
-  if (
-    registeredUsers.users.find((user) => user.email === req.session.user)
-      .active2AF
-  ) {
-    console.log("2AF actif enregistrement permis");
-    res.redirect("/verifyOtp");
+  if (!req.session.twoFactorAuthenticated) {
+    res.redirect("/activate2AF");
   } else {
-    console.log("2AF non actif enregistrement non permis");
-    res.redirect("/qrcode");
+    res.send("Enregistrement des modifications...");
   }
 });
 
 app.get("/private", isAuthenticated, (req, res) => {
   return res.sendFile(path.join(__dirname, "public", "private.html"));
+});
+
+app.get("/activate2AF", isAuthenticated, (req, res) => {
+  return res.sendFile(path.join(__dirname, "public", "activate2AF.html"));
+});
+
+app.post("/activate2AF", isAuthenticated, (req, res) => {
+  const token = req.body.token;
+  const username = req.session.user;
+  const guessableFileName = Buffer.from(username)
+    .toString("base64")
+    .substring(0, 6);
+  const directoryName = path.join(__dirname, "db", "otpkeys");
+  if (!fs.existsSync(directoryName)) {
+    fs.mkdirSync(directoryName);
+  }
+  const authenticatorSecret = fs.readFileSync(
+    path.join(directoryName, guessableFileName),
+    "utf-8"
+  );
+  console.log(authenticatorSecret, token);
+  const isValid = authenticator.check(token, authenticatorSecret);
+  if (isValid) {
+    req.session.twoFactorAuthenticated = true;
+    console.log("2AF activé");
+    res.redirect("/blog");
+  }
 });
 
 app.get("/qrcode", isAuthenticated, (req, res) => {
@@ -115,42 +137,9 @@ app.get("/qrcode", isAuthenticated, (req, res) => {
     const user = registeredUsers.users.find((user) => user.email === username);
     user.active2AF = true;
     fs.writeFileSync(filePathUser, JSON.stringify(registeredUsers, null, 2));
-    res.send(`<img src="${data_url}" />`);
+    //res.send(`<img src="${data_url}" />`);
+    res.json({ qrCodeData: data_url });
   });
-});
-
-app.get("/verifyOtp", isAuthenticated, (req, res) => {
-  // TODO Faire une belle page web
-  res.send(`
-        <form method="POST">
-            <label for="token">Code secret TOTP</label>
-            <input type="number" name="token" id="token">
-            <input type="submit" value="Valider">
-        </form>
-    `);
-});
-
-app.post("/verifyOtp", isAuthenticated, (req, res) => {
-  const token = req.body.token;
-  const username = req.session.user;
-  const guessableFileName = Buffer.from(username)
-    .toString("base64")
-    .substring(0, 6);
-  const directoryName = path.join(__dirname, "db", "otpkeys");
-  if (!fs.existsSync(directoryName)) {
-    fs.mkdirSync(directoryName);
-  }
-  const authenticatorSecret = fs.readFileSync(
-    path.join(directoryName, guessableFileName),
-    "utf-8"
-  );
-  console.log(authenticatorSecret, token);
-  const isValid = authenticator.check(token, authenticatorSecret);
-  if (isValid) {
-    res.send("Ca marche");
-  } else {
-    res.send("Mauvais code");
-  }
 });
 
 app.listen(3000, () => {
