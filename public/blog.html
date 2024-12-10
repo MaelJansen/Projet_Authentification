@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="./style.css" />
+    <script src="./index.js" defer></script>
+    <script src="./blog.js" defer></script>
+    <title>Document</title>
+  </head>
+  <body>
+    <div class="container">
+      <div id="header"></div>
+      <div class="content">
+        <div class="blog-creation">
+          <div class="blog-header">
+            <h1>Mon blog</h1>
+            <p class="blog-status-public">Public</p>
+          </div>
+          <form method="POST">
+            <div class="blog-title">
+              <h2>Titre</h2>
+              <input type="text" id="title" name="title" />
+            </div>
+            <div class="blog-content">
+              <h2>Contenu</h2>
+              <textarea id="blog-entry" name="content"></textarea>
+            </div>
+            <button type="submit" class="button">
+              enregistrer les modifications
+            </button>
+          </form>
+        </div>
+      </div>
+      <div id="footer"></div>
+    </div>
+  </body>
+</html>
