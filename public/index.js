@@ -20,6 +20,7 @@ const createHeader = () => {
         </div>
         <div>
           <a href="/blog">Mon espace</a>
+          <a href="/logout">Se déconnecter</a>
         </div>
       </header>
     `;

@@ -142,6 +142,18 @@ app.get("/qrcode", isAuthenticated, (req, res) => {
   });
 });
 
+app.get('/logout', (req, res) => {
+    return res.sendFile(path.join(__dirname, "public", "logout.html"));
+});
+
+app.get('/logoutThisEquipment', (req, res) => {
+    
+})
+
+app.get('/logoutAllEquipments', (req, res) => {
+
+})
+
 app.listen(3000, () => {
   console.log("👌 Server is running on port 3000");
 });
