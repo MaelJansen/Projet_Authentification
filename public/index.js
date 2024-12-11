@@ -4,8 +4,6 @@ const publicBlogs = document.getElementById("public-blogs-container");
 const privateBlogs = document.getElementById("private-blogs-container");
 const afDiv = document.getElementById("2AF-content");
 
-let aVirer = ["a", "b", "c", "d", "e"];
-
 const createHeader = () => {
   header.innerHTML = `
       <header>
@@ -33,34 +31,44 @@ const createFooter = () => {
 
 const createPublicBlogs = () => {
   if (!publicBlogs) return;
-  aVirer.forEach((element) => {
-    publicBlogs.innerHTML += `
+  fetch("/pubicBlogs")
+    .then((res) => res.json())
+    .then((data) => {
+      data.forEach((element) => {
+        publicBlogs.innerHTML += `
         <div class="blog">
             <div class="blog-header">
-                <h2>Titre du blog</h2>
-                <p class="blog-status-public">Public</p>
+                <h2>${element.title}</h2>
+                <p class="blog-status-public">${element.status}</p>
             </div>
-            <span><h4>Résumer du blog : </h4>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</span>
+            <p>Auteur : ${element.author}</p>
+            <span><h4>Résumer du blog : </h4>${element.content}</span>
             <a href="">Lire la suite</a>
         </div>
     `;
-  });
+      });
+    });
 };
 
 const createPrivateBlogs = () => {
   if (!privateBlogs) return;
-  aVirer.forEach((element) => {
-    privateBlogs.innerHTML += `
+  fetch("/privateBlogs")
+    .then((res) => res.json())
+    .then((data) => {
+      data.forEach((element) => {
+        privateBlogs.innerHTML += `
         <div class="blog">
             <div class="blog-header">
-                <h2>Titre du blog</h2>
-                <p class="blog-status-private">Privé</p>
+                <h2>${element.title}</h2>
+                <p class="blog-status-private">${element.status}</p>
             </div>
-            <span><h4>Résumer du blog : </h4>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</span>
+            <p>Auteur : ${element.author}</p>
+            <span><h4>Résumer du blog : </h4>${element.content}</span>
             <a href="">Lire la suite</a>
         </div>
     `;
-  });
+      });
+    });
 };
 
 const fetchQRCode = () => {
@@ -96,8 +104,24 @@ const createAFDiv = () => {
     `;
 };
 
+const filBlog = (e) => {
+  fetch("/personnalBlogs").then((res) =>
+    res.json().then((data) => {
+      const title = document.getElementById("perso-blog-title");
+      const content = document.getElementById("blog-entry");
+      const status = document.getElementById("perso-blog-status");
+      const id = document.getElementById("perso-blog-id");
+      title.value = data[0].title;
+      content.value = data[0].content;
+      status.textContent = data[0].status;
+      id.value = data[0].id;
+    })
+  );
+};
+
 createHeader();
 createFooter();
 createPublicBlogs();
 createPrivateBlogs();
 createAFDiv();
+filBlog();

@@ -13,15 +13,16 @@
       <div id="header"></div>
       <div class="content">
         <div class="blog-creation">
-          <div class="blog-header">
-            <h1>Mon blog</h1>
-            <p class="blog-status-public">Public</p>
-          </div>
           <form method="POST">
+            <div class="blog-header">
+              <h1>Mon blog</h1>
+              <p class="blog-status-public" id="perso-blog-status">Public</p>
+            </div>
             <div class="blog-title">
               <h2>Titre</h2>
-              <input type="text" id="title" name="title" />
+              <input type="text" id="perso-blog-title" name="title" />
             </div>
+            <input type="hidden" id="perso-blog-id" name="id" />
             <div class="blog-content">
               <h2>Contenu</h2>
               <textarea id="blog-entry" name="content"></textarea>
