@@ -1,8 +1,6 @@
 const express = require("express");
 const path = require("path");
 const bodyParser = require("body-parser");
-const session = require("express-session");
-const FileStore = require("session-file-store")(session);
 const fs = require("node:fs");
 const registeredUsers = require("./db/users.json");
 const blogs = require("./db/blogs.json");
@@ -24,23 +22,9 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 app.use(express.static(path.join(__dirname, "public")));
-app.use(
-  session({
-    secret: "Message secret",
-    resave: true,
-    saveUninitialized: true,
-    cookie: { secure: false },
-    store: new FileStore({ path: "./sessions" }),
-  })
-);
 app.use(bodyParser.urlencoded({ extended: false }));
 
 const isAuthenticated = (req, res, next) => {
-  /*if (req.session.loggedIn) {
-    return next();
-  } else {
-    return res.redirect("/login");
-  }*/
   const token = req.cookies?.token;
   console.log(token);
   console.log(!token);
@@ -89,20 +73,6 @@ app.post("/login", (req, res) => {
   console.log(req.body);
   const mail = req.body.mail;
   const password = req.body.password;
-  /*if (
-    registeredUsers.users.find(
-      (user) => user.email === mail && user.password === password
-    )
-  ) {
-    req.session.loggedIn = true;
-    req.session.user = mail;
-    req.session.save((err) => {
-      if (err) {
-        return res.status(500).send("Erreur serveur");
-      }
-      res.redirect("/blog");
-    });
-    */
   console.log(mail, password);
   const user = userCache.users.find(
     (user) => user.email === mail && user.password === password
@@ -119,7 +89,9 @@ app.post("/login", (req, res) => {
 app.post("/register", (req, res) => {});
 
 app.get("/logout", (req, res) => {
-  req.session.destroy();
+  res.clearCookie("token");
+  res.clearCookie("2AF");
+  registeredUsers.clearCookie("mail");
   res.redirect("/");
 });
 
@@ -179,7 +151,6 @@ app.post("/activate2AF", isAuthenticated, (req, res) => {
   );
   const isValid = authenticator.check(token, authenticatorSecret);
   if (isValid) {
-    req.session.twoFactorAuthenticated = true;
     res.cookie("2AF", "true");
     res.redirect("/blog");
   }
