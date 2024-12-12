@@ -1,3 +1,5 @@
+const passport = require('passport');
+const db = require('./db');
 const express = require("express");
 const path = require("path");
 const bodyParser = require("body-parser");
@@ -12,25 +14,63 @@ const filePathUser = path.join(__dirname, "db", "users.json");
 
 const app = express();
 
+const authRoutes = require("./routes/auth");
+
+var session = require('express-session');
+var passport = require('passport');
+
+
+app.use("/auth", authRoutes);
+
+app.use(passport.initialize());
+app.use(passport.session());
+
+
+passport.serializeUser(function(user, done) {
+  done(null, user.id);
+});
+
+passport.deserializeUser(function(id, done) {
+  const user = registeredUsers.users.find(u => u.id === id);
+  done(null, user);
+});
+
+var SQLiteStore = require('connect-sqlite3')(session);
+
+app.use(express.static(path.join(__dirname, "public")));
+
+app.use(session({
+  secret: process.env.SESSION_SECRET || "keyboard cat",
+  resave: false,
+  saveUninitialized: false,
+  store: new SQLiteStore({ db: 'sessions.db', dir: './var/db' })
+}));
+
+app.use(passport.authenticate('session'));
+
+/*
 app.use(express.static(path.join(__dirname, "public")));
 app.use(
   session({
-    secret: "Message secret",
+    secret: process.env.SESSION_SECRET || "Message secret",
     resave: true,
     saveUninitialized: true,
-    cookie: { secure: false },
+    cookie: { secure: process.env.NODE_ENV === 'production' },
     store: new FileStore({ path: "./sessions" }),
   })
 );
 app.use(bodyParser.urlencoded({ extended: false }));
+*/
+
 
 const isAuthenticated = (req, res, next) => {
-  if (req.session.loggedIn) {
+  if (req.isAuthenticated()) {
     return next();
   } else {
     return res.redirect("/login");
   }
 };
+
 
 app.get("/", (req, res) => {
   return res.sendFile(path.join(__dirname, "public", "index.html"));
