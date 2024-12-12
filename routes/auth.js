@@ -76,15 +76,13 @@ router.get('/oauth2/redirect/google', passport.authenticate('google', {
     failureRedirect: '/login'
 }));
 
-
 // Route de déconnexion
 router.post('/logout', function(req, res, next) {
-  req.logout(function(err) {
-    if (err) { return next(err); }
-    res.redirect('/');
+    req.logout(function(err) {
+      if (err) { return next(err); }
+      res.redirect('/');
+    });
   });
-});
-
 
 
 
