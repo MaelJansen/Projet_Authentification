@@ -69,9 +69,30 @@ app.post("/login", (req, res) => {
   }
 });
 
-app.get("/logout", (req, res) => {
-  req.session.destroy();
-  res.redirect("/");
+app.get('/logout', (req, res) => {
+  return res.sendFile(path.join(__dirname, "public", "logout.html"));
+});
+
+app.get('/logoutThisEquipment', (req, res) => {
+  req.session.destroy(function (err) {
+    res.redirect('/');
+  });
+});
+
+app.post('/logoutAllEquipments', async (req, res) => {
+  //partie 1 : invalider les jwt. 
+  if (req.user) {
+    registeredUsers.users = registeredUsers.users.map(u =>
+      u.email === req.user.email ? { ...u, sessionVersion: u.sessionVersion + 1 } : u
+    );
+
+    fs.writeFileSync(filePathUser, JSON.stringify(registeredUsers, null, 2));
+  }
+
+  //partie 2 : suppression de la session
+  req.session.destroy(function (err) {
+    res.redirect('/');
+  });
 });
 
 app.get("/blog", isAuthenticated, (req, res) => {
@@ -141,18 +162,6 @@ app.get("/qrcode", isAuthenticated, (req, res) => {
     res.json({ qrCodeData: data_url });
   });
 });
-
-app.get('/logout', (req, res) => {
-    return res.sendFile(path.join(__dirname, "public", "logout.html"));
-});
-
-app.get('/logoutThisEquipment', (req, res) => {
-    
-})
-
-app.get('/logoutAllEquipments', (req, res) => {
-
-})
 
 app.listen(3000, () => {
   console.log("👌 Server is running on port 3000");
