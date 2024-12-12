@@ -8,11 +8,20 @@ const registeredUsers = require("./db/users.json");
 const blogs = require("./db/blogs.json");
 const { authenticator } = require("otplib");
 const qrcode = require("qrcode");
+const jwt = require("jsonwebtoken");
+const cookieParser = require("cookie-parser");
+
+const JWT_SECRET = "mysecretkey";
 
 const filePathBlog = path.join(__dirname, "db", "blogs.json");
+const filePathUser = path.join(__dirname, "db", "users.json");
 let blogCache = blogs;
+let userCache = registeredUsers;
 
 const app = express();
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 app.use(express.static(path.join(__dirname, "public")));
 app.use(
@@ -27,11 +36,24 @@ app.use(
 app.use(bodyParser.urlencoded({ extended: false }));
 
 const isAuthenticated = (req, res, next) => {
-  if (req.session.loggedIn) {
+  /*if (req.session.loggedIn) {
     return next();
   } else {
     return res.redirect("/login");
+  }*/
+  const token = req.cookies?.token;
+  console.log(token);
+  console.log(!token);
+  if (!token) {
+    return res.sendFile(path.join(__dirname, "public", "login_form.html"));
   }
+  jwt.verify(token, JWT_SECRET, (err, decoded) => {
+    if (err) {
+      return res.sendFile(path.join(__dirname, "public", "login_form.html"));
+    }
+    console.log(decoded);
+    next();
+  });
 };
 
 const loadBlogsCache = () => {
@@ -45,22 +67,29 @@ const loadBlogsCache = () => {
   });
 };
 
+const loadUsersCache = () => {
+  fs.readFile(filePathUser, "utf-8", (err, data) => {
+    if (err) {
+      console.log(err);
+    } else {
+      userCache = JSON.parse(data);
+    }
+  });
+};
+
 app.get("/", (req, res) => {
   return res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-app.get("/login", (req, res) => {
-  if (!req.session.user) {
-    return res.sendFile(path.join(__dirname, "public", "login_form.html"));
-  } else {
-    return res.sendFile(path.join(__dirname, "public", "blog.html"));
-  }
+app.get("/login", isAuthenticated, (req, res) => {
+  return res.sendFile(path.join(__dirname, "public", "blog.html"));
 });
 
 app.post("/login", (req, res) => {
+  console.log(req.body);
   const mail = req.body.mail;
   const password = req.body.password;
-  if (
+  /*if (
     registeredUsers.users.find(
       (user) => user.email === mail && user.password === password
     )
@@ -73,10 +102,21 @@ app.post("/login", (req, res) => {
       }
       res.redirect("/blog");
     });
+    */
+  console.log(mail, password);
+  const user = userCache.users.find(
+    (user) => user.email === mail && user.password === password
+  );
+  if (user) {
+    const token = jwt.sign({ user: user.email }, JWT_SECRET);
+    return res.json({ token });
   } else {
+    console.log("Les identifiants sont incorrects");
     res.status(401).send("Identifiants incorrects");
   }
 });
+
+app.post("/register", (req, res) => {});
 
 app.get("/logout", (req, res) => {
   req.session.destroy();
@@ -89,7 +129,7 @@ app.get("/blog", isAuthenticated, (req, res) => {
 });
 
 app.post("/blog", isAuthenticated, (req, res) => {
-  if (!req.session.twoFactorAuthenticated) {
+  if (!req.cookies["2AF"]) {
     res.redirect("/activate2AF");
   } else {
     const rawData = fs.readFileSync(filePathBlog);
@@ -104,7 +144,7 @@ app.post("/blog", isAuthenticated, (req, res) => {
       }
     });
     fs.writeFileSync(filePathBlog, JSON.stringify(blogJson));
-    res.redirect("/blog");
+    res.redirect("/");
   }
 });
 
@@ -118,7 +158,14 @@ app.get("/activate2AF", isAuthenticated, (req, res) => {
 
 app.post("/activate2AF", isAuthenticated, (req, res) => {
   const token = req.body.token;
-  const username = req.session.user;
+  const username = req.cookies?.mail;
+  if (!username) {
+    return res
+      .status(401)
+      .send(
+        "Vous devez être connecté pour activer l'authentification à deux facteurs"
+      );
+  }
   const guessableFileName = Buffer.from(username)
     .toString("base64")
     .substring(0, 6);
@@ -133,12 +180,20 @@ app.post("/activate2AF", isAuthenticated, (req, res) => {
   const isValid = authenticator.check(token, authenticatorSecret);
   if (isValid) {
     req.session.twoFactorAuthenticated = true;
+    res.cookie("2AF", "true");
     res.redirect("/blog");
   }
 });
 
 app.get("/qrcode", isAuthenticated, (req, res) => {
-  const username = req.session.user;
+  const username = req.cookies?.mail;
+  if (!username) {
+    return res
+      .status(401)
+      .send(
+        "Vous devez être connecté pour activer l'authentification à deux facteurs"
+      );
+  }
   const service = "ProjetDevAuth";
   const secret = authenticator.generateSecret();
   const guessableFileName = Buffer.from(username)
@@ -167,7 +222,7 @@ app.get("/pubicBlogs", (req, res) => {
   res.json(publicBlogs);
 });
 
-app.get("/privateBlogs", (req, res) => {
+app.get("/privateBlogs", isAuthenticated, (req, res) => {
   loadBlogsCache();
   //const privateBlogs = blogs.blogs.filter((blog) => blog.status === "privé");
   const privateBlogs = blogCache.blogs.filter(
@@ -179,8 +234,11 @@ app.get("/privateBlogs", (req, res) => {
 app.get("/personnalBlogs", isAuthenticated, (req, res) => {
   loadBlogsCache();
   const personnalBlogs = blogs.blogs.filter(
-    (blog) => blog.author === req.session.user
+    (blog) => blog.author === req.cookies?.mail
   );
+  if (!personnalBlogs) {
+    return res.status(404).send("Pas de blog trouvé");
+  }
   res.json(personnalBlogs);
 });
 

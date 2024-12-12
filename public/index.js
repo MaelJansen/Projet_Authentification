@@ -119,6 +119,41 @@ const filBlog = (e) => {
   );
 };
 
+const getLoginForm = () => {
+  window.location.href = "/login";
+};
+
+const getRegisterForm = () => {
+  window.location.href = "/register";
+};
+
+const login = () => {
+  const mail = document.getElementById("mail").value;
+  const password = document.getElementById("password").value;
+  console.log(mail, password);
+  fetch("/login", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ mail: mail, password: password }),
+  }).then((res, err) => {
+    console.log(res);
+    if (err) {
+      console.log(err);
+    }
+    res.json().then((data) => {
+      if (data.token) {
+        document.cookie = `token=${data.token}`;
+        document.cookie = `mail=${mail}`;
+        window.location.href = "/blog";
+      } else {
+        alert("Identifiants incorrects");
+      }
+    });
+  });
+};
+
 createHeader();
 createFooter();
 createPublicBlogs();
