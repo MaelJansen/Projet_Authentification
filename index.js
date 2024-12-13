@@ -1,18 +1,17 @@
-const passport = require('passport');
-const db = require('./db');
+const passport = require("passport");
+const db = require("./db");
 const express = require("express");
 const path = require("path");
 const bodyParser = require("body-parser");
 const session = require("express-session");
-const FileStore = require("session-file-store")(session);
 const fs = require("node:fs");
 const registeredUsers = require("./db/users.json");
 const blogs = require("./db/blogs.json");
 const { authenticator } = require("otplib");
 const qrcode = require("qrcode");
 const jwt = require("jsonwebtoken");
-const cookieParser = require("cookie-parser");
 
+const authRoutes = require("./routes/auth");
 const JWT_SECRET = "mysecretkey";
 
 const filePathBlog = path.join(__dirname, "db", "blogs.json");
@@ -22,39 +21,32 @@ let userCache = registeredUsers;
 
 const app = express();
 
-const authRoutes = require("./routes/auth");
-
-var session = require('express-session');
-var passport = require('passport');
-
-
+var SQLiteStore = require("connect-sqlite3")(session);
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || "keyboard cat",
+    resave: false,
+    saveUninitialized: false,
+    store: new SQLiteStore({ db: "sessions.db", dir: "./db" }),
+  })
+);
 app.use("/auth", authRoutes);
 
 app.use(passport.initialize());
 app.use(passport.session());
 
-
-passport.serializeUser(function(user, done) {
+passport.serializeUser(function (user, done) {
   done(null, user.id);
 });
 
-passport.deserializeUser(function(id, done) {
-  const user = registeredUsers.users.find(u => u.id === id);
+passport.deserializeUser(function (id, done) {
+  const user = registeredUsers.users.find((u) => u.id === id);
   done(null, user);
 });
 
-var SQLiteStore = require('connect-sqlite3')(session);
-
 app.use(express.static(path.join(__dirname, "public")));
 
-app.use(session({
-  secret: process.env.SESSION_SECRET || "keyboard cat",
-  resave: false,
-  saveUninitialized: false,
-  store: new SQLiteStore({ db: 'sessions.db', dir: './var/db' })
-}));
-
-app.use(passport.authenticate('session'));
+app.use(passport.authenticate("session"));
 
 /*
 app.use(express.static(path.join(__dirname, "public")));
@@ -69,7 +61,6 @@ app.use(
 );
 app.use(bodyParser.urlencoded({ extended: false }));
 */
-
 
 const isAuthenticated = (req, res, next) => {
   const token = req.session?.token;
@@ -111,7 +102,6 @@ const getActivated2AFFromToken = (token) => {
     return null;
   }
 };
-
 
 app.get("/", (req, res) => {
   return res.sendFile(path.join(__dirname, "public", "index.html"));

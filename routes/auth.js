@@ -6,6 +6,8 @@ const db = require("../db");
 
 const router = express.Router();
 
+require("dotenv").config();
+
 // Configure la stratégie Google OAuth avec Passport
 passport.use(new GoogleStrategy({
   clientID: process.env["GOOGLE_CLIENT_ID"],
