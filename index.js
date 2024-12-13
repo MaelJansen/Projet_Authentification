@@ -94,13 +94,11 @@ app.get("/register", (req, res) => {
 });
 
 app.post("/register", (req, res) => {
-  console.log("Enregistrement");
   const mail = req.body.mail;
   const password = req.body.password;
   console.log(mail, password);
   const user = userCache.users.find((user) => user.email === mail);
   if (user) {
-    console.log("L'utilisateur existe déjà");
     return res.status(400).send("L'utilisateur existe déjà");
   }
   userCache.users.push({ email: mail, password: password, active2AF: false });
@@ -110,7 +108,7 @@ app.post("/register", (req, res) => {
     author: mail,
     title: "",
     content: "",
-    status: "public",
+    status: req.body.status,
   });
   fs.writeFileSync(filePathBlog, JSON.stringify(blogCache));
   res.redirect("/login");
@@ -224,7 +222,6 @@ app.get("/pubicBlogs", (req, res) => {
 
 app.get("/privateBlogs", isAuthenticated, (req, res) => {
   loadBlogsCache();
-  //const privateBlogs = blogs.blogs.filter((blog) => blog.status === "privé");
   const privateBlogs = blogCache.blogs.filter(
     (blog) => blog.status === "privé"
   );
