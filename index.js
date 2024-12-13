@@ -223,7 +223,7 @@ app.get("/privateBlogs", isAuthenticated, (req, res) => {
 
 app.get("/personnalBlogs", isAuthenticated, (req, res) => {
   loadBlogsCache();
-  const personnalBlogs = blogs.blogs.filter(
+  const personnalBlogs = blogCache.blogs.filter(
     (blog) => blog.author === req.cookies?.mail
   );
   if (!personnalBlogs) {
