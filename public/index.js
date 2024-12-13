@@ -18,6 +18,7 @@ const createHeader = () => {
         </div>
         <div>
           <a href="/blog">Mon espace</a>
+          <a href="/logout">Se déconnecter</a>
         </div>
       </header>
     `;
@@ -143,20 +144,13 @@ const login = () => {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({ mail: mail, password: password }),
-  }).then((res, err) => {
-    console.log(res);
-    if (err) {
-      console.log(err);
+  }).then((res) => {
+    if (res.status === 200) {
+      window.location.href = "/blog";
+    } else {
+      document.getElementById("errorMessage-login").textContent =
+        "Identifiants incorrects";
     }
-    res.json().then((data) => {
-      if (data.token) {
-        document.cookie = `token=${data.token}`;
-        document.cookie = `mail=${mail}`;
-        window.location.href = "/blog";
-      } else {
-        alert("Identifiants incorrects");
-      }
-    });
   });
 };
 
