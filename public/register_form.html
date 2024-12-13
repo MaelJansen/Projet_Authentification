@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="./style.css" />
+    <script src="./index.js" defer></script>
+    <title>Register</title>
+  </head>
+  <body>
+    <div class="container">
+      <div class="container">
+        <div id="header"></div>
+        <div class="content">
+          <div class="login-container">
+            <h1>Créer un compte</h1>
+            <form method="POST" class="login-form">
+              <div class="login-form-entity">
+                <label for="username">Email</label>
+                <input type="text" id="mail" name="mail" required />
+              </div>
+              <div class="login-form-entity">
+                <label for="password">Mot de passe</label>
+                <input type="password" id="password" name="password" required />
+              </div>
+              <div>
+                <button type="button" onclick="getLoginForm()">
+                  Se connecter
+                </button>
+                <button type="submit" value="register">Créer un compte</button>
+              </div>
+            </form>
+          </div>
+        </div>
+        <div id="footer"></div>
+      </div>
+    </div>
+  </body>
+</html>

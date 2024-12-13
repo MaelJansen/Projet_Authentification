@@ -78,7 +78,10 @@ app.post("/login", (req, res) => {
     (user) => user.email === mail && user.password === password
   );
   if (user) {
-    const token = jwt.sign({ user: user.email }, JWT_SECRET);
+    const token = jwt.sign(
+      { user: user.email, active2AF: user.active2AF },
+      JWT_SECRET
+    );
     return res.json({ token });
   } else {
     console.log("Les identifiants sont incorrects");
@@ -86,7 +89,32 @@ app.post("/login", (req, res) => {
   }
 });
 
-app.post("/register", (req, res) => {});
+app.get("/register", (req, res) => {
+  return res.sendFile(path.join(__dirname, "public", "register_form.html"));
+});
+
+app.post("/register", (req, res) => {
+  console.log("Enregistrement");
+  const mail = req.body.mail;
+  const password = req.body.password;
+  console.log(mail, password);
+  const user = userCache.users.find((user) => user.email === mail);
+  if (user) {
+    console.log("L'utilisateur existe déjà");
+    return res.status(400).send("L'utilisateur existe déjà");
+  }
+  userCache.users.push({ email: mail, password: password, active2AF: false });
+  fs.writeFileSync(filePathUser, JSON.stringify(userCache));
+  blogCache.blogs.push({
+    id: blogCache.blogs.length + 1,
+    author: mail,
+    title: "",
+    content: "",
+    status: "public",
+  });
+  fs.writeFileSync(filePathBlog, JSON.stringify(blogCache));
+  res.redirect("/login");
+});
 
 app.get("/logout", (req, res) => {
   res.clearCookie("token");
@@ -107,6 +135,7 @@ app.post("/blog", isAuthenticated, (req, res) => {
     const rawData = fs.readFileSync(filePathBlog);
     let blogJson = JSON.parse(rawData);
     let blogs = blogJson.blogs;
+    console.log(req.body);
     blogs.forEach((blog) => {
       if (blog.id == req.body.id) {
         console.log("Entrée dans le if");
