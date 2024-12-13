@@ -51,16 +51,6 @@ const loadBlogsCache = () => {
   });
 };
 
-const loadUsersCache = () => {
-  fs.readFile(filePathUser, "utf-8", (err, data) => {
-    if (err) {
-      console.log(err);
-    } else {
-      userCache = JSON.parse(data);
-    }
-  });
-};
-
 app.get("/", (req, res) => {
   return res.sendFile(path.join(__dirname, "public", "index.html"));
 });
@@ -179,6 +169,9 @@ app.post("/activate2AF", isAuthenticated, (req, res) => {
   const isValid = authenticator.check(token, authenticatorSecret);
   if (isValid) {
     res.cookie("2AF", "true");
+    const user = userCache.users.find((user) => user.email === username);
+    user.active2AF = true;
+    fs.writeFileSync(filePathUser, JSON.stringify(userCache));
     res.redirect("/blog");
   }
 });
