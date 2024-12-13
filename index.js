@@ -91,7 +91,7 @@ app.post("/register", (req, res) => {});
 app.get("/logout", (req, res) => {
   res.clearCookie("token");
   res.clearCookie("2AF");
-  registeredUsers.clearCookie("mail");
+  res.clearCookie("mail");
   res.redirect("/");
 });
 
