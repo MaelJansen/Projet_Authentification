@@ -119,7 +119,6 @@ app.post("/blog", isAuthenticated, (req, res) => {
       if (blog.id == req.body.id) {
         blog.title = req.body.title;
         blog.content = req.body.content;
-        blog.status = "public";
       }
     });
     fs.writeFileSync(filePathBlog, JSON.stringify(blogJson));
