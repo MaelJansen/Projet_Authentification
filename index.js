@@ -26,8 +26,6 @@ app.use(bodyParser.urlencoded({ extended: false }));
 
 const isAuthenticated = (req, res, next) => {
   const token = req.cookies?.token;
-  console.log(token);
-  console.log(!token);
   if (!token) {
     return res.sendFile(path.join(__dirname, "public", "login_form.html"));
   }
@@ -35,13 +33,11 @@ const isAuthenticated = (req, res, next) => {
     if (err) {
       return res.sendFile(path.join(__dirname, "public", "login_form.html"));
     }
-    console.log(decoded);
     next();
   });
 };
 
 const loadBlogsCache = () => {
-  console.log("Chargement du cache");
   fs.readFile(filePathBlog, "utf-8", (err, data) => {
     if (err) {
       console.log(err);
@@ -60,10 +56,8 @@ app.get("/login", isAuthenticated, (req, res) => {
 });
 
 app.post("/login", (req, res) => {
-  console.log(req.body);
   const mail = req.body.mail;
   const password = req.body.password;
-  console.log(mail, password);
   const user = userCache.users.find(
     (user) => user.email === mail && user.password === password
   );
@@ -74,7 +68,6 @@ app.post("/login", (req, res) => {
     );
     return res.json({ token });
   } else {
-    console.log("Les identifiants sont incorrects");
     res.status(401).send("Identifiants incorrects");
   }
 });
@@ -86,7 +79,6 @@ app.get("/register", (req, res) => {
 app.post("/register", (req, res) => {
   const mail = req.body.mail;
   const password = req.body.password;
-  console.log(mail, password);
   const user = userCache.users.find((user) => user.email === mail);
   if (user) {
     return res.status(400).send("L'utilisateur existe déjà");
@@ -123,10 +115,8 @@ app.post("/blog", isAuthenticated, (req, res) => {
     const rawData = fs.readFileSync(filePathBlog);
     let blogJson = JSON.parse(rawData);
     let blogs = blogJson.blogs;
-    console.log(req.body);
     blogs.forEach((blog) => {
       if (blog.id == req.body.id) {
-        console.log("Entrée dans le if");
         blog.title = req.body.title;
         blog.content = req.body.content;
         blog.status = "public";
