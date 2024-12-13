@@ -114,6 +114,12 @@ const filBlog = (e) => {
       title.value = data[0].title;
       content.value = data[0].content;
       status.textContent = data[0].status;
+      status.classList = "";
+      if (data[0].status === "public") {
+        status.classList.add("blog-status-public");
+      } else {
+        status.classList.add("blog-status-private");
+      }
       id.value = data[0].id;
     })
   );
