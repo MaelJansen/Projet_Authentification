@@ -8,6 +8,7 @@ const { authenticator } = require("otplib");
 const qrcode = require("qrcode");
 const jwt = require("jsonwebtoken");
 const cookieParser = require("cookie-parser");
+const authRouter = require('./routes/auth');
 
 const JWT_SECRET = "mysecretkey";
 
@@ -96,11 +97,54 @@ app.post("/register", (req, res) => {
   res.redirect("/login");
 });
 
+app.use('/', authRouter);
+
 app.get("/logout", (req, res) => {
+  return res.sendFile(path.join(__dirname, "public", "logout.html"));
+});
+
+app.get("/logoutThisEquipment", (req, res) => {
   res.clearCookie("token");
   res.clearCookie("2AF");
   res.clearCookie("mail");
   res.redirect("/");
+});
+
+app.get("/logoutAllEquipments", isAuthenticated, (req, res) => {
+  const token = req.body.token;
+  const username = req.cookies?.mail;
+
+  if (!username) {
+    return res.status(401).send("Vous devez être connecté pour cette action");
+  }
+
+  const guessableFileName = Buffer.from(username)
+    .toString("base64")
+    .substring(0, 6);
+  const directoryName = path.join(__dirname, "db", "otpkeys");
+
+  try {
+    const authenticatorSecret = fs.readFileSync(
+      path.join(directoryName, guessableFileName),
+      "utf-8"
+    );
+
+    const isValid = authenticator.check(token, authenticatorSecret);
+
+    if (!isValid) {
+      return res.status(401).send("Code de confirmation incorrect");
+    }
+
+    // Suppression des cookies de tous les appareils en réinitialisant la clé secrète JWT
+    JWT_SECRET = require("crypto").randomBytes(64).toString("hex");
+    res.clearCookie("token");
+    res.clearCookie("2AF");
+    res.clearCookie("mail");
+    res.redirect("/");
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Erreur serveur");
+  }
 });
 
 app.get("/blog", isAuthenticated, (req, res) => {
