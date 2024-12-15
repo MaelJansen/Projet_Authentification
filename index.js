@@ -22,6 +22,8 @@ let userCache = registeredUsers;
 const app = express();
 
 var SQLiteStore = require("connect-sqlite3")(session);
+app.use(express.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "keyboard cat",
@@ -47,20 +49,6 @@ passport.deserializeUser(function (id, done) {
 app.use(express.static(path.join(__dirname, "public")));
 
 app.use(passport.authenticate("session"));
-
-/*
-app.use(express.static(path.join(__dirname, "public")));
-app.use(
-  session({
-    secret: process.env.SESSION_SECRET || "Message secret",
-    resave: true,
-    saveUninitialized: true,
-    cookie: { secure: process.env.NODE_ENV === 'production' },
-    store: new FileStore({ path: "./sessions" }),
-  })
-);
-app.use(bodyParser.urlencoded({ extended: false }));
-*/
 
 const isAuthenticated = (req, res, next) => {
   const token = req.session?.token;
@@ -112,6 +100,7 @@ app.get("/login", isAuthenticated, (req, res) => {
 });
 
 app.post("/login", (req, res) => {
+  console.log(req.body);
   const mail = req.body.mail;
   const password = req.body.password;
   const user = userCache.users.find(
@@ -119,7 +108,7 @@ app.post("/login", (req, res) => {
   );
   if (user) {
     const token = jwt.sign(
-      { user: user.email, active2AF: user.active2AFs },
+      { user: user.email, active2AF: user.active2AF },
       JWT_SECRET
     );
     req.session.token = token;
@@ -193,7 +182,7 @@ app.get("/blog", isAuthenticated, (req, res) => {
 
 app.post("/blog", isAuthenticated, (req, res) => {
   const active2AF = getActivated2AFFromToken(req.session.token);
-  if (!res.cookie("2AF") && !active2AF) {
+  if (!active2AF) {
     res.redirect("/activate2AF");
   } else {
     const rawData = fs.readFileSync(filePathBlog);
@@ -244,6 +233,8 @@ app.post("/activate2AF", isAuthenticated, (req, res) => {
   if (isValid) {
     res.cookie("2AF", "true");
     req.session.active2AF = true;
+    const token = jwt.sign({ user: username, active2AF: true }, JWT_SECRET);
+    req.session.token = token;
     req.session.save((err) => {
       const user = userCache.users.find((user) => user.email === username);
       user.active2AF = true;
