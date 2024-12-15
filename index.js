@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require("express");
 const path = require("path");
 const bodyParser = require("body-parser");
@@ -9,6 +10,9 @@ const qrcode = require("qrcode");
 const jwt = require("jsonwebtoken");
 const cookieParser = require("cookie-parser");
 const authRouter = require('./routes/auth');
+const session = require('express-session');
+const passport = require('passport');
+const SQLiteStore = require('connect-sqlite3')(session);
 
 const JWT_SECRET = "mysecretkey";
 
@@ -23,6 +27,14 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 app.use(express.static(path.join(__dirname, "public")));
+app.use(session({
+  secret: 'keyboard cat',
+  resave: false,
+  saveUninitialized: false,
+  store: new SQLiteStore({ db: 'sessions.db', dir: './var/db' })
+}));
+app.use(passport.authenticate('session'));
+
 app.use(bodyParser.urlencoded({ extended: false }));
 
 const isAuthenticated = (req, res, next) => {
@@ -135,7 +147,6 @@ app.get("/logoutAllEquipments", isAuthenticated, (req, res) => {
       return res.status(401).send("Code de confirmation incorrect");
     }
 
-    // Suppression des cookies de tous les appareils en réinitialisant la clé secrète JWT
     JWT_SECRET = require("crypto").randomBytes(64).toString("hex");
     res.clearCookie("token");
     res.clearCookie("2AF");
